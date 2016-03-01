@@ -50,6 +50,7 @@ DEFAULTS = {
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'rest_framework.negotiation.DefaultContentNegotiation',
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
     'DEFAULT_VERSIONING_CLASS': None,
+    'HIDDEN_EMPTY_VALUES': 'nothing',
 
     # Generic view behavior
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',

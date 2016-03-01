@@ -354,6 +354,11 @@ class Serializer(BaseSerializer):
             if not field.write_only
         ]
 
+    @cached_property
+    def _get_hidden_empty_values(self):
+        meta = getattr(self, 'Meta', None)
+        return meta and getattr(meta, 'hidden_empty_values', None) or api_settings.HIDDEN_EMPTY_VALUES
+
     def get_fields(self):
         """
         Returns a dictionary of {field_name: field_instance}.
@@ -464,14 +469,28 @@ class Serializer(BaseSerializer):
             except SkipField:
                 continue
 
-            if attribute is None:
-                # We skip `to_representation` for `None` values so that
-                # fields do not have to explicitly deal with that case.
-                ret[field.field_name] = None
-            else:
-                ret[field.field_name] = field.to_representation(attribute)
+            # We skip `to_representation` for `None` values so that
+            # fields do not have to explicitly deal with that case.
+            represented = None if attribute is None else field.to_representation(attribute)
+            if self.is_hidden_value(represented):
+                continue
+            ret[field.field_name] = represented
 
         return ret
+
+    def is_hidden_value(self, value):
+        """
+        :return: *True* for :value: which should be hidden in *to_representation* method.
+            Method behavior can be configured with **Meta.hidden_empty_values** in serializer or
+            **HIDDEN_EMPTY_VALUES** in API settings.
+        """
+        if self._get_hidden_empty_values == 'nothing' or value or isinstance(value, (bool, int)):
+            return False
+        if self._get_hidden_empty_values == 'all':
+            return True
+        return (isinstance(value, str) and 'str' in self._get_hidden_empty_values) or\
+               (isinstance(value, list) or isinstance(value, tuple) and 'list' in self._get_hidden_empty_values) or\
+               (value is None and 'None' in self._get_hidden_empty_values)
 
     def validate(self, attrs):
         return attrs

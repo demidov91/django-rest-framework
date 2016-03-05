@@ -17,6 +17,8 @@ from .utils import MockObject
 class TestSerializer:
     def setup(self):
         class ExampleSerializer(serializers.Serializer):
+            class Meta:
+                pass
             char = serializers.CharField()
             integer = serializers.IntegerField()
         self.Serializer = ExampleSerializer
@@ -39,7 +41,7 @@ class TestSerializer:
         assert serializer.validated_data == {'char': 'abc'}
         assert serializer.errors == {}
 
-    def test_empty_serializer(self):
+    def test_empty_serializer_default(self):
         serializer = self.Serializer()
         assert serializer.data == {'char': '', 'integer': None}
 
@@ -60,6 +62,40 @@ class TestSerializer:
         assert serializer.data == {'char': 'abc', 'integer': 123}
         with pytest.raises(AssertionError):
             serializer.save()
+
+    def test_is_hidden_value_nothing(self):
+        serializer = self.Serializer()
+        assert serializer.is_hidden_value('') is False
+        assert serializer.is_hidden_value(None) is False
+        assert serializer.is_hidden_value([]) is False
+        assert serializer.is_hidden_value(()) is False
+        assert serializer.is_hidden_value({}) is False
+        assert serializer.is_hidden_value(0) is False
+        assert serializer.is_hidden_value('abc') is False
+
+    def test_is_hidden_value_all(self):
+        serializer = self.Serializer()
+        serializer.Meta.hidden_empty_values = 'all'
+        assert serializer.is_hidden_value('')
+        assert serializer.is_hidden_value(None)
+        assert serializer.is_hidden_value([])
+        assert serializer.is_hidden_value(())
+        assert serializer.is_hidden_value({})
+        assert serializer.is_hidden_value(False) is False
+        assert serializer.is_hidden_value(0) is False
+        assert serializer.is_hidden_value('abc') is False
+
+    def test_is_hidden_value_list_str(self):
+        serializer = self.Serializer()
+        serializer.Meta.hidden_empty_values = 'list', 'str'
+        assert serializer.is_hidden_value('')
+        assert serializer.is_hidden_value(None) is False
+        assert serializer.is_hidden_value([])
+        assert serializer.is_hidden_value(())
+        assert serializer.is_hidden_value({}) is False
+        assert serializer.is_hidden_value(False) is False
+        assert serializer.is_hidden_value(0) is False
+        assert serializer.is_hidden_value('abc') is False
 
 
 class TestValidateMethod:

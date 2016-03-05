@@ -490,6 +490,7 @@ class Serializer(BaseSerializer):
             return True
         return (isinstance(value, str) and 'str' in self._get_hidden_empty_values) or\
                (isinstance(value, list) or isinstance(value, tuple) and 'list' in self._get_hidden_empty_values) or\
+               (isinstance(value, dict) and 'dict' in self._get_hidden_empty_values) or\
                (value is None and 'None' in self._get_hidden_empty_values)
 
     def validate(self, attrs):
